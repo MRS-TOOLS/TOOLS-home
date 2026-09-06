@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>買っちゃった / 耐えたリスト</title>
+<title>買っちゃった/耐えたログ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 <div class="app">
 
   <header class="app-header">
-    <h1 class="logo">買っちゃった<span class="amp">/</span>耐えた<span class="logo-diary">リスト</span></h1>
+    <h1 class="logo">買っちゃった<span class="amp">/</span>耐えた<span class="logo-diary">ログ</span></h1>
   </header>
 
   <main class="tab-content">
@@ -125,6 +125,11 @@
     <!-- ============ 計画 ============ -->
     <section id="tab-plan" class="tab-panel">
 
+      <div class="plan-header-row">
+        <h2 class="block-title plan-header-title">計画</h2>
+        <button type="button" id="planSettingsBtn" class="gear-btn" aria-label="計画を再設定" hidden>⚙️</button>
+      </div>
+
       <div class="plan-progress-block" id="planProgressBlock" hidden>
         <h2 class="block-title" id="planNameDisplay"></h2>
         <div class="progress-bar-outer">
@@ -137,6 +142,14 @@
         <div class="plan-meta-row">
           <span id="planDeadlineText" class="plan-meta"></span>
           <span id="planRewardText" class="plan-meta"></span>
+        </div>
+
+        <div class="plan-chart-block">
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch legend-line"></span>積立の推移</span>
+            <span class="legend-item"><span class="legend-swatch legend-target"></span>目標金額</span>
+          </div>
+          <div id="planChartWrapper" class="chart-wrapper"></div>
         </div>
       </div>
       <p id="planEmptyState" class="empty-state" hidden>まだ計画が設定されていません</p>
@@ -167,6 +180,8 @@
         <div class="form-actions">
           <button type="submit" id="planSaveBtn" class="primary-btn">計画を保存する</button>
         </div>
+
+        <button type="button" id="planDeleteBtn" class="text-btn plan-delete-btn" hidden>この計画を削除する</button>
       </form>
 
     </section>
