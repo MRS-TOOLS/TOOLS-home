@@ -1,40 +1,65 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ストップウォッチ</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ストップウォッチ</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-<button class="tab-btn active" onclick="switchTab('single')">シングル</button>
-<button class="tab-btn" onclick="switchTab('multi')">マルチ</button>
-</header>
-<main>
-<div id="single-tab" class="tab-content active">
-<div class="single-container">
-<div class="single-timer-card">
-<div id="single-display" class="single-time-display">00:00<span class="ms-part">.00</span></div>
-<div class="single-controls">
-<button id="single-lap-btn" class="round-btn btn-big-lap" onclick="lapSingle()" disabled>ラップ</button>
-<button id="single-start-btn" class="round-btn btn-big-start" onclick="toggleSingle()">スタート</button>
-<button id="single-reset-btn" class="round-btn btn-big-reset" onclick="resetSingle()" disabled>リセット</button>
-</div></div>
-<div class="laps-card">
-<div class="laps-header"><span>ラップ</span><span>合計</span></div>
-<div id="laps-list" class="laps-list"></div>
-</div></div><div class="footer-link-container"><a href="https://mrs-tools.pages.dev" target="_blank" rel="noopener noreferrer" class="btn-footer-link">MRS TOOLS</a></div></div></div>
-<div id="multi-tab" class="tab-content">
-<div class="multi-container">
-<div class="add-sw-card">
-<input type="text" id="new-sw-label" class="label-input" placeholder="ストップウォッチ名を入力">
-<button class="add-btn" onclick="addStopwatch()">＋ 追加</button>
-</div>
-<div id="sw-list" class="sw-list"></div>
-</div><div class="footer-link-container"><a href="https://mrs-tools.pages.dev" target="_blank" rel="noopener noreferrer" class="btn-footer-link">MRS TOOLS</a></div></div></div>
-</main>
-<div class="ad-banner"><div style="max-width:100%;"><script src="https://adm.shinobi.jp/s/8a495d941206bf0c34aff9559f8d2cea"></script></div></div>
-<script src="script.js"></script>
+
+    <header>
+        <button class="tab-btn active" onclick="switchTab('single')">シングル</button>
+        <button class="tab-btn" onclick="switchTab('multi')">マルチ</button>
+    </header>
+
+    <main>
+        <div id="single-tab" class="tab-content active">
+            <div class="single-container">
+                <div class="single-timer-card">
+                    <div id="single-display" class="single-time-display">00:00<span class="ms-part">.00</span></div>
+                    <div class="single-controls">
+                        <button id="single-lap-btn" class="round-btn btn-big-lap" onclick="lapSingle()" disabled>ラップ</button>
+                        <button id="single-start-btn" class="round-btn btn-big-start" onclick="toggleSingle()">スタート</button>
+                        <button id="single-reset-btn" class="round-btn btn-big-reset" onclick="resetSingle()" disabled>リセット</button>
+                    </div>
+                </div>
+                <div class="laps-card">
+                    <div class="laps-header"><span>ラップ</span><span>合計</span></div>
+                    <div id="laps-list" class="laps-list"></div>
+                </div>
+                <div class="footer-link-container">
+                    <a href="https://mrs-tools.pages.dev" target="_blank" rel="noopener noreferrer" class="btn-footer-link">MRS TOOLS</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="multi-tab" class="tab-content">
+            <div class="multi-container">
+                <div class="add-sw-card">
+                    <input type="text" id="new-sw-label" class="label-input" placeholder="ストップウォッチ名を入力">
+                    <button class="add-btn" onclick="addStopwatch()">＋ 追加</button>
+                </div>
+                <div id="sw-list" class="sw-list"></div>
+                <div class="footer-link-container">
+                    <a href="https://mrs-tools.pages.dev" target="_blank" rel="noopener noreferrer" class="btn-footer-link">MRS TOOLS</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+
+    <!-- ========================================
+         固定広告
+    ========================================= -->
+    <div class="ad-banner">
+        <div style="max-width: 100%;">
+            <!-- admax -->
+            <script src="https://adm.shinobi.jp/s/8a495d941206bf0c34aff9559f8d2cea"></script>
+            <!-- admax -->
+        </div>
+    </div>
+
 </body>
 </html>
