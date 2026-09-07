@@ -9,6 +9,7 @@
   var STORAGE_ENTRIES = "wasteListEntries";
   var STORAGE_TAGS = "wasteListTags";
   var STORAGE_PLAN = "wasteListPlan";
+  var STORAGE_PLAN_HISTORY = "wasteListPlanHistory";
 
   var TYPE_LABEL = { wasted: "買っちゃった", endured: "耐えた" };
 
@@ -41,10 +42,12 @@
   var entries = loadJSON(STORAGE_ENTRIES, []);
   var tags = loadJSON(STORAGE_TAGS, []); // [{id, name}]
   var plan = loadJSON(STORAGE_PLAN, null); // {name, targetAmount, deadline, reward, subtractWasted}
+  var planHistory = loadJSON(STORAGE_PLAN_HISTORY, []); // [{id, name, targetAmount, achievedAmount, reward, deadline, completedAt}]
 
   function saveEntries() { saveJSON(STORAGE_ENTRIES, entries); }
   function saveTags() { saveJSON(STORAGE_TAGS, tags); }
   function savePlan() { saveJSON(STORAGE_PLAN, plan); }
+  function savePlanHistory() { saveJSON(STORAGE_PLAN_HISTORY, planHistory); }
 
   /* ---------------------------------------------------------
      共通ユーティリティ
@@ -73,9 +76,12 @@
 
   function pad2(n) { return String(n).padStart(2, "0"); }
 
-  function toDatetimeLocalValue(d) {
-    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
-      "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  function toDateValue(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function toTimeValue(d) {
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
   }
 
   function toDatetimeDisplay(iso) {
@@ -153,7 +159,8 @@
   var typeSelect = document.getElementById("typeSelect");
   var entryForm = document.getElementById("entryForm");
   var selectedTypeChip = document.getElementById("selectedTypeChip");
-  var entryDatetime = document.getElementById("entryDatetime");
+  var entryDate = document.getElementById("entryDate");
+  var entryTime = document.getElementById("entryTime");
   var entryItemName = document.getElementById("entryItemName");
   var entryPlace = document.getElementById("entryPlace");
   var entryAmount = document.getElementById("entryAmount");
@@ -177,7 +184,8 @@
     selectedTypeChip.textContent = TYPE_LABEL[currentEntryType];
     selectedTypeChip.className = "selected-type-chip type-" + currentEntryType;
 
-    entryDatetime.value = toDatetimeLocalValue(new Date());
+    entryDate.value = toDateValue(new Date());
+    entryTime.value = toTimeValue(new Date());
     newEntryTagIds = [];
     renderTagChipSelect(entryTagSelect, newEntryTagIds);
     tagEmptyHint.hidden = tags.length > 0;
@@ -207,7 +215,9 @@
       return;
     }
 
-    var dtVal = entryDatetime.value ? new Date(entryDatetime.value) : new Date();
+    var dtVal = entryDate.value
+      ? new Date(entryDate.value + "T" + (entryTime.value || "00:00"))
+      : new Date();
 
     var entry = {
       id: genId(),
@@ -346,7 +356,8 @@
 
   var editEntryModal = document.getElementById("editEntryModal");
   var editTypeSelect = document.getElementById("editTypeSelect");
-  var editDatetime = document.getElementById("editDatetime");
+  var editDate = document.getElementById("editDate");
+  var editTime = document.getElementById("editTime");
   var editItemName = document.getElementById("editItemName");
   var editPlace = document.getElementById("editPlace");
   var editAmount = document.getElementById("editAmount");
@@ -366,7 +377,8 @@
     editingType = en.type;
     editEntryTagIds = (en.tags || []).slice();
 
-    editDatetime.value = toDatetimeLocalValue(new Date(en.datetime));
+    editDate.value = toDateValue(new Date(en.datetime));
+    editTime.value = toTimeValue(new Date(en.datetime));
     editItemName.value = en.itemName || "";
     editPlace.value = en.place || "";
     editAmount.value = en.amount;
@@ -409,7 +421,9 @@
     if (!en) return;
 
     en.type = editingType;
-    en.datetime = editDatetime.value ? new Date(editDatetime.value).toISOString() : en.datetime;
+    en.datetime = editDate.value
+      ? new Date(editDate.value + "T" + (editTime.value || "00:00")).toISOString()
+      : en.datetime;
     en.itemName = editItemName.value.trim();
     en.place = editPlace.value.trim();
     en.amount = amount;
@@ -798,7 +812,7 @@
   --------------------------------------------------------- */
 
   var planProgressBlock = document.getElementById("planProgressBlock");
-  var planEmptyState = document.getElementById("planEmptyState");
+  var planEmptyBlock = document.getElementById("planEmptyBlock");
   var planNameDisplay = document.getElementById("planNameDisplay");
   var planProgressBar = document.getElementById("planProgressBar");
   var planProgressPercent = document.getElementById("planProgressPercent");
@@ -806,18 +820,49 @@
   var planDeadlineText = document.getElementById("planDeadlineText");
   var planRewardText = document.getElementById("planRewardText");
   var planSettingsBtn = document.getElementById("planSettingsBtn");
+  var planCreateBtn = document.getElementById("planCreateBtn");
+  var planCompleteBtn = document.getElementById("planCompleteBtn");
   var planChartWrapper = document.getElementById("planChartWrapper");
-  var planDeleteBtn = document.getElementById("planDeleteBtn");
+  var planHistoryList = document.getElementById("planHistoryList");
+  var planHistoryEmpty = document.getElementById("planHistoryEmpty");
 
+  var planModal = document.getElementById("planModal");
   var planForm = document.getElementById("planForm");
   var planNameInput = document.getElementById("planName");
   var planTargetAmountInput = document.getElementById("planTargetAmount");
   var planDeadlineInput = document.getElementById("planDeadline");
   var planRewardInput = document.getElementById("planReward");
   var planSubtractWastedInput = document.getElementById("planSubtractWasted");
+  var planCancelBtn = document.getElementById("planCancelBtn");
+  var planDeleteBtn = document.getElementById("planDeleteBtn");
 
-  planSettingsBtn.addEventListener("click", function () {
-    planForm.hidden = !planForm.hidden;
+  var currentPlanProgressAmount = 0;
+
+  function openPlanModal() {
+    if (plan) {
+      planNameInput.value = plan.name;
+      planTargetAmountInput.value = plan.targetAmount;
+      planDeadlineInput.value = plan.deadline || "";
+      planRewardInput.value = plan.reward || "";
+      planSubtractWastedInput.checked = !!plan.subtractWasted;
+      planDeleteBtn.hidden = false;
+    } else {
+      planForm.reset();
+      planSubtractWastedInput.checked = true;
+      planDeleteBtn.hidden = true;
+    }
+    planModal.hidden = false;
+  }
+
+  function closePlanModal() {
+    planModal.hidden = true;
+  }
+
+  planSettingsBtn.addEventListener("click", openPlanModal);
+  planCreateBtn.addEventListener("click", openPlanModal);
+  planCancelBtn.addEventListener("click", closePlanModal);
+  planModal.addEventListener("click", function (e) {
+    if (e.target === planModal) closePlanModal();
   });
 
   planDeleteBtn.addEventListener("click", function () {
@@ -825,35 +870,67 @@
     if (!confirm("計画「" + plan.name + "」を削除しますか？")) return;
     plan = null;
     savePlan();
+    closePlanModal();
     renderPlanTab();
     showToast("計画を削除しました");
+  });
+
+  planForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var target = parseInt(planTargetAmountInput.value, 10);
+    if (isNaN(target) || target < 0) {
+      showToast("目標金額を正しく入力してください");
+      return;
+    }
+
+    plan = {
+      name: planNameInput.value.trim() || "無題の計画",
+      targetAmount: target,
+      deadline: planDeadlineInput.value || "",
+      reward: planRewardInput.value.trim(),
+      subtractWasted: planSubtractWastedInput.checked
+    };
+
+    savePlan();
+    closePlanModal();
+    renderPlanTab();
+    showToast("計画を保存しました");
+  });
+
+  planCompleteBtn.addEventListener("click", function () {
+    if (!plan) return;
+    if (!confirm("計画「" + plan.name + "」を達成として完了しますか？完了すると達成履歴に記録されます。")) return;
+
+    planHistory.unshift({
+      id: genId(),
+      name: plan.name,
+      targetAmount: plan.targetAmount,
+      achievedAmount: currentPlanProgressAmount,
+      reward: plan.reward,
+      deadline: plan.deadline,
+      completedAt: new Date().toISOString()
+    });
+    savePlanHistory();
+
+    plan = null;
+    savePlan();
+    renderPlanTab();
+    showToast("計画を完了しました！お疲れ様でした🎉");
   });
 
   function renderPlanTab() {
     if (!plan) {
       planProgressBlock.hidden = true;
-      planEmptyState.hidden = false;
+      planEmptyBlock.hidden = false;
       planSettingsBtn.hidden = true;
-      planDeleteBtn.hidden = true;
-      planForm.hidden = false;
-      planForm.reset();
-      planSubtractWastedInput.checked = true;
+      renderPlanHistory();
       return;
     }
 
-    planEmptyState.hidden = true;
+    planEmptyBlock.hidden = true;
     planProgressBlock.hidden = false;
     planSettingsBtn.hidden = false;
-    planDeleteBtn.hidden = false;
-    // 設定済みの場合はフォームを畳んでおき、歯車ボタンで再表示する
-    planForm.hidden = true;
-
-    // フォームに現在値を反映（再設定時に編集しやすいように）
-    planNameInput.value = plan.name;
-    planTargetAmountInput.value = plan.targetAmount;
-    planDeadlineInput.value = plan.deadline || "";
-    planRewardInput.value = plan.reward || "";
-    planSubtractWastedInput.checked = !!plan.subtractWasted;
 
     var totalEndured = 0, totalWasted = 0;
     entries.forEach(function (en) {
@@ -862,6 +939,8 @@
     });
 
     var progressAmount = plan.subtractWasted ? (totalEndured - totalWasted) : totalEndured;
+    currentPlanProgressAmount = progressAmount;
+
     var target = plan.targetAmount || 0;
     var pct = target > 0 ? Math.max(0, Math.min(100, (progressAmount / target) * 100)) : 0;
 
@@ -892,7 +971,71 @@
 
     planRewardText.textContent = plan.reward ? "🎁 " + plan.reward : "";
 
+    planCompleteBtn.hidden = pct < 100;
+
     renderPlanChart(target);
+    renderPlanHistory();
+  }
+
+  function renderPlanHistory() {
+    planHistoryList.innerHTML = "";
+
+    if (planHistory.length === 0) {
+      planHistoryEmpty.hidden = false;
+      return;
+    }
+    planHistoryEmpty.hidden = true;
+
+    planHistory.forEach(function (h) {
+      var card = document.createElement("div");
+      card.className = "plan-history-card";
+
+      var top = document.createElement("div");
+      top.className = "plan-history-top";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "plan-history-name";
+      nameEl.textContent = h.name;
+
+      var dateEl = document.createElement("span");
+      dateEl.className = "plan-history-date";
+      var cd = new Date(h.completedAt);
+      dateEl.textContent = cd.getFullYear() + "/" + (cd.getMonth() + 1) + "/" + cd.getDate() + " 達成";
+
+      top.appendChild(nameEl);
+      top.appendChild(dateEl);
+
+      var amountsEl = document.createElement("div");
+      amountsEl.className = "plan-history-amounts";
+      amountsEl.textContent = formatYen(h.achievedAmount) + " / " + formatYen(h.targetAmount);
+
+      card.appendChild(top);
+      card.appendChild(amountsEl);
+
+      if (h.reward) {
+        var rewardEl = document.createElement("div");
+        rewardEl.className = "plan-history-reward";
+        rewardEl.textContent = "🎁 " + h.reward;
+        card.appendChild(rewardEl);
+      }
+
+      var actions = document.createElement("div");
+      actions.className = "plan-history-actions";
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "icon-btn danger";
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", function () {
+        if (!confirm("この達成履歴を削除しますか？")) return;
+        planHistory = planHistory.filter(function (item) { return item.id !== h.id; });
+        savePlanHistory();
+        renderPlanHistory();
+      });
+      actions.appendChild(delBtn);
+      card.appendChild(actions);
+
+      planHistoryList.appendChild(card);
+    });
   }
 
   /* ---------------------------------------------------------

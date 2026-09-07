@@ -166,15 +166,14 @@ button {
   border-color: var(--ink-soft);
 }
 
-/* datetime-local はブラウザ標準の内部表示幅がはみ出しやすいため個別調整 */
-input[type="datetime-local"].text-input {
-  padding: 12px 8px;
-  font-size: 14px;
+.datetime-row {
+  display: flex;
+  gap: 10px;
 }
 
-input[type="datetime-local"]::-webkit-datetime-edit {
-  max-width: 100%;
-  overflow: hidden;
+.datetime-row .text-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .empty-state {
@@ -697,6 +696,79 @@ input[type="datetime-local"]::-webkit-datetime-edit {
   text-align: center;
   margin-top: 14px;
   color: #b0524f;
+}
+
+.plan-empty-block {
+  text-align: center;
+  padding: 20px 0 10px;
+}
+
+.plan-empty-block .primary-btn {
+  display: inline-block;
+  width: auto;
+  padding: 13px 28px;
+  margin-top: 6px;
+}
+
+.plan-complete-btn {
+  margin-top: 16px;
+  background: linear-gradient(90deg, var(--endured-strong), var(--endured));
+}
+
+.plan-history-block {
+  margin-top: 28px;
+}
+
+.plan-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-1);
+}
+
+.plan-history-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-history-name {
+  font-family: "Zen Maru Gothic", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.plan-history-date {
+  font-size: 11px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.plan-history-amounts {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--endured-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-history-reward {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.plan-history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .plan-progress-block {
