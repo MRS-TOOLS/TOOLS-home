@@ -805,6 +805,9 @@
   var planProgressAmounts = document.getElementById("planProgressAmounts");
   var planDeadlineText = document.getElementById("planDeadlineText");
   var planRewardText = document.getElementById("planRewardText");
+  var planSettingsBtn = document.getElementById("planSettingsBtn");
+  var planChartWrapper = document.getElementById("planChartWrapper");
+  var planDeleteBtn = document.getElementById("planDeleteBtn");
 
   var planForm = document.getElementById("planForm");
   var planNameInput = document.getElementById("planName");
@@ -813,10 +816,26 @@
   var planRewardInput = document.getElementById("planReward");
   var planSubtractWastedInput = document.getElementById("planSubtractWasted");
 
+  planSettingsBtn.addEventListener("click", function () {
+    planForm.hidden = !planForm.hidden;
+  });
+
+  planDeleteBtn.addEventListener("click", function () {
+    if (!plan) return;
+    if (!confirm("計画「" + plan.name + "」を削除しますか？")) return;
+    plan = null;
+    savePlan();
+    renderPlanTab();
+    showToast("計画を削除しました");
+  });
+
   function renderPlanTab() {
     if (!plan) {
       planProgressBlock.hidden = true;
       planEmptyState.hidden = false;
+      planSettingsBtn.hidden = true;
+      planDeleteBtn.hidden = true;
+      planForm.hidden = false;
       planForm.reset();
       planSubtractWastedInput.checked = true;
       return;
@@ -824,8 +843,12 @@
 
     planEmptyState.hidden = true;
     planProgressBlock.hidden = false;
+    planSettingsBtn.hidden = false;
+    planDeleteBtn.hidden = false;
+    // 設定済みの場合はフォームを畳んでおき、歯車ボタンで再表示する
+    planForm.hidden = true;
 
-    // フォームに現在値を反映（編集しやすいように）
+    // フォームに現在値を反映（再設定時に編集しやすいように）
     planNameInput.value = plan.name;
     planTargetAmountInput.value = plan.targetAmount;
     planDeadlineInput.value = plan.deadline || "";
@@ -868,6 +891,112 @@
     }
 
     planRewardText.textContent = plan.reward ? "🎁 " + plan.reward : "";
+
+    renderPlanChart(target);
+  }
+
+  /* ---------------------------------------------------------
+     計画タブ：目標達成までの進捗グラフ（直近12ヶ月の累計推移）
+  --------------------------------------------------------- */
+
+  function renderPlanChart(target) {
+    if (entries.length === 0) {
+      planChartWrapper.innerHTML = '<p class="empty-state">記録がまだありません</p>';
+      return;
+    }
+
+    // 直近12ヶ月分の年月バケットを生成
+    var months = [];
+    var base = new Date(today.getFullYear(), today.getMonth(), 1);
+    for (var i = 11; i >= 0; i--) {
+      var d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth() });
+    }
+
+    function contribution(en) {
+      if (en.type === "endured") return en.amount;
+      return plan.subtractWasted ? -en.amount : 0;
+    }
+
+    var windowStart = new Date(months[0].year, months[0].month, 1);
+
+    var baseline = 0;
+    var monthlyDelta = months.map(function () { return 0; });
+
+    entries.forEach(function (en) {
+      var d = new Date(en.datetime);
+      var c = contribution(en);
+      if (d < windowStart) {
+        baseline += c;
+        return;
+      }
+      var idx = months.findIndex(function (m) { return m.year === d.getFullYear() && m.month === d.getMonth(); });
+      if (idx !== -1) monthlyDelta[idx] += c;
+    });
+
+    var running = baseline;
+    var cumulative = monthlyDelta.map(function (delta) {
+      running += delta;
+      return running;
+    });
+
+    var categories = months.map(function (m) {
+      return (m.year % 100) + "/" + (m.month + 1);
+    });
+
+    renderLineWithTarget(planChartWrapper, categories, cumulative, target);
+  }
+
+  function renderLineWithTarget(containerEl, categories, values, target) {
+    var n = categories.length;
+    var width = 320, height = 160;
+    var plotTop = 12, plotBottom = 128, labelY = 148;
+    var plotLeft = 10, plotRight = width - 10;
+
+    var allValues = values.concat([target, 0]);
+    var maxV = Math.max.apply(null, allValues);
+    var minV = Math.min.apply(null, allValues);
+    if (maxV === minV) { maxV += 1; }
+    var range = maxV - minV;
+
+    function valueToY(v) {
+      return plotBottom - ((v - minV) / range) * (plotBottom - plotTop);
+    }
+
+    function xAt(i) {
+      return n <= 1 ? (plotLeft + plotRight) / 2 : plotLeft + (plotRight - plotLeft) * (i / (n - 1));
+    }
+
+    var svgParts = [];
+    svgParts.push('<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg">');
+
+    // 目標ライン
+    var targetY = valueToY(target);
+    svgParts.push('<line x1="' + plotLeft + '" y1="' + targetY.toFixed(1) + '" x2="' + plotRight + '" y2="' + targetY.toFixed(1) +
+      '" stroke="var(--wasted-strong)" stroke-width="1.5" stroke-dasharray="4,3" />');
+    svgParts.push('<text x="' + plotRight + '" y="' + (targetY - 4).toFixed(1) +
+      '" font-size="9" fill="var(--wasted-strong)" text-anchor="end">目標 ' + escapeHtml(formatYen(target)) + '</text>');
+
+    // 累計推移ライン
+    var points = [];
+    for (var i = 0; i < n; i++) points.push(xAt(i).toFixed(1) + "," + valueToY(values[i]).toFixed(1));
+    svgParts.push('<polyline points="' + points.join(" ") +
+      '" fill="none" stroke="var(--endured)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />');
+
+    for (var j = 0; j < n; j++) {
+      svgParts.push('<circle cx="' + xAt(j).toFixed(1) + '" cy="' + valueToY(values[j]).toFixed(1) +
+        '" r="2.4" fill="var(--endured)" />');
+    }
+
+    var labelStep = n <= 6 ? 1 : Math.ceil(n / 6);
+    for (var m = 0; m < n; m++) {
+      if (m % labelStep !== 0 && m !== n - 1) continue;
+      svgParts.push('<text x="' + xAt(m).toFixed(1) + '" y="' + labelY +
+        '" font-size="9" fill="var(--ink-soft)" text-anchor="middle">' + escapeHtml(categories[m]) + '</text>');
+    }
+
+    svgParts.push('</svg>');
+    containerEl.innerHTML = svgParts.join("");
   }
 
   planForm.addEventListener("submit", function (e) {
