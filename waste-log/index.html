@@ -37,17 +37,20 @@
       <form class="entry-form" id="entryForm" hidden>
         <div class="selected-type-chip" id="selectedTypeChip"></div>
 
-        <label class="field-label" for="entryDatetime">日時</label>
-        <input type="datetime-local" id="entryDatetime" class="text-input" required>
+        <label class="field-label" for="entryDate">日時</label>
+        <div class="datetime-row">
+          <input type="date" id="entryDate" class="text-input" required>
+          <input type="time" id="entryTime" class="text-input" required>
+        </div>
+
+        <label class="field-label" for="entryAmount">金額（円）</label>
+        <input type="number" id="entryAmount" class="text-input" inputmode="numeric" min="0" step="1" placeholder="0" required>
 
         <label class="field-label" for="entryItemName">品名・内容</label>
         <input type="text" id="entryItemName" class="text-input" placeholder="例：コンビニスイーツ" maxlength="60">
 
         <label class="field-label" for="entryPlace">場所・店舗</label>
         <input type="text" id="entryPlace" class="text-input" placeholder="例：セブンイレブン" maxlength="60">
-
-        <label class="field-label" for="entryAmount">金額（円）</label>
-        <input type="number" id="entryAmount" class="text-input" inputmode="numeric" min="0" step="1" placeholder="0" required>
 
         <div class="tag-field-header">
           <span class="field-label">タグ</span>
@@ -144,6 +147,8 @@
           <span id="planRewardText" class="plan-meta"></span>
         </div>
 
+        <button type="button" id="planCompleteBtn" class="primary-btn plan-complete-btn" hidden>🎉 計画を達成として完了する</button>
+
         <div class="plan-chart-block">
           <div class="chart-legend">
             <span class="legend-item"><span class="legend-swatch legend-line"></span>積立の推移</span>
@@ -152,37 +157,17 @@
           <div id="planChartWrapper" class="chart-wrapper"></div>
         </div>
       </div>
-      <p id="planEmptyState" class="empty-state" hidden>まだ計画が設定されていません</p>
 
-      <form class="plan-form" id="planForm">
-        <h2 class="block-title">計画を設定</h2>
+      <div class="plan-empty-block" id="planEmptyBlock" hidden>
+        <p class="empty-state">まだ計画が設定されていません</p>
+        <button type="button" id="planCreateBtn" class="primary-btn">計画を設定する</button>
+      </div>
 
-        <label class="field-label" for="planName">計画名</label>
-        <input type="text" id="planName" class="text-input" placeholder="例：夏のボーナス貯金" maxlength="60" required>
-
-        <label class="field-label" for="planTargetAmount">目標金額（円）</label>
-        <input type="number" id="planTargetAmount" class="text-input" inputmode="numeric" min="0" step="1" placeholder="0" required>
-
-        <label class="field-label" for="planDeadline">目標納期</label>
-        <input type="date" id="planDeadline" class="text-input">
-
-        <label class="field-label" for="planReward">ご褒美内容</label>
-        <input type="text" id="planReward" class="text-input" placeholder="例：欲しかった靴を買う" maxlength="60">
-
-        <div class="switch-row">
-          <span class="field-label switch-label">「買っちゃった」を積立からマイナスする</span>
-          <label class="switch">
-            <input type="checkbox" id="planSubtractWasted" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" id="planSaveBtn" class="primary-btn">計画を保存する</button>
-        </div>
-
-        <button type="button" id="planDeleteBtn" class="text-btn plan-delete-btn" hidden>この計画を削除する</button>
-      </form>
+      <div class="plan-history-block">
+        <h2 class="block-title">達成履歴</h2>
+        <div id="planHistoryList" class="plan-history-list"></div>
+        <p id="planHistoryEmpty" class="empty-state" hidden>まだ達成した計画はありません</p>
+      </div>
 
     </section>
 
@@ -207,6 +192,42 @@
 
 </div>
 
+<!-- 計画設定ポップアップ -->
+<div id="planModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h3 class="modal-title">計画を設定</h3>
+
+    <form id="planForm">
+      <label class="field-label" for="planName">計画名</label>
+      <input type="text" id="planName" class="text-input" placeholder="例：夏のボーナス貯金" maxlength="60" required>
+
+      <label class="field-label" for="planTargetAmount">目標金額（円）</label>
+      <input type="number" id="planTargetAmount" class="text-input" inputmode="numeric" min="0" step="1" placeholder="0" required>
+
+      <label class="field-label" for="planDeadline">目標納期</label>
+      <input type="date" id="planDeadline" class="text-input">
+
+      <label class="field-label" for="planReward">ご褒美内容</label>
+      <input type="text" id="planReward" class="text-input" placeholder="例：欲しかった靴を買う" maxlength="60">
+
+      <div class="switch-row">
+        <span class="field-label switch-label">「買っちゃった」を積立からマイナスする</span>
+        <label class="switch">
+          <input type="checkbox" id="planSubtractWasted" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="planCancelBtn" class="secondary-btn">キャンセル</button>
+        <button type="submit" id="planSaveBtn" class="primary-btn">保存する</button>
+      </div>
+
+      <button type="button" id="planDeleteBtn" class="text-btn plan-delete-btn" hidden>この計画を削除する</button>
+    </form>
+  </div>
+</div>
+
 <!-- 記録編集モーダル -->
 <div id="editEntryModal" class="modal-overlay" hidden>
   <div class="modal-card">
@@ -220,17 +241,20 @@
       </button>
     </div>
 
-    <label class="field-label" for="editDatetime">日時</label>
-    <input type="datetime-local" id="editDatetime" class="text-input">
+    <label class="field-label" for="editDate">日時</label>
+    <div class="datetime-row">
+      <input type="date" id="editDate" class="text-input">
+      <input type="time" id="editTime" class="text-input">
+    </div>
+
+    <label class="field-label" for="editAmount">金額（円）</label>
+    <input type="number" id="editAmount" class="text-input" inputmode="numeric" min="0" step="1">
 
     <label class="field-label" for="editItemName">品名・内容</label>
     <input type="text" id="editItemName" class="text-input" maxlength="60">
 
     <label class="field-label" for="editPlace">場所・店舗</label>
     <input type="text" id="editPlace" class="text-input" maxlength="60">
-
-    <label class="field-label" for="editAmount">金額（円）</label>
-    <input type="number" id="editAmount" class="text-input" inputmode="numeric" min="0" step="1">
 
     <span class="field-label">タグ</span>
     <div class="tag-chip-select" id="editTagSelect"></div>
