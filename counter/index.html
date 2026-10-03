@@ -99,6 +99,12 @@
                 </div>
             </div>
         </div>
+        <details style="margin:16px;padding:14px;border:1px solid #444;border-radius:10px">
+            <summary>新カウンターへのデータ移行</summary>
+            <p style="margin:12px 0;font-size:14px">カウント・項目・保存履歴をJSONファイルに書き出します。移行先の「データ読み込み」で引き継げます。</p>
+            <button type="button" onclick="exportCounterData()" style="min-height:44px;padding:8px 12px">データ書き出し</button>
+            <p id="transfer-status" role="status" aria-live="polite" style="margin-top:10px;font-size:14px"></p>
+        </details>
     </main>
 
     <!-- ========================================
@@ -113,5 +119,6 @@
     </div>
     
     <script src="script.js"></script>
+    <script src="data-transfer.js?v=1"></script>
 </body>
 </html>
