@@ -4,34 +4,12 @@
   if (!script) return;
   const site = script.dataset.siteId;
   const key = 'mrs.analytics.daily.' + site;
-  const disabledKey = 'mrs.analytics.disabled';
   const production = location.origin === 'https://mrs-tools.pages.dev';
   const preview = /^[a-z0-9-]+\.mrs-tools\.pages\.dev$/.test(location.hostname);
   if (site !== 'tools-home' || !['/','/index.html'].includes(location.pathname) || (!production && !preview)) return;
   const endpoint = production
     ? 'https://mrs-analytics.mrsworkspjt.workers.dev/v1/collect'
     : 'https://mrs-analytics-preview.mrsworkspjt.workers.dev/v1/collect';
-  const button = document.getElementById('mrs-analytics-toggle');
-  let memoryDisabled = false;
-  function disabled() {
-    try { return memoryDisabled || localStorage.getItem(disabledKey) === 'true'; }
-    catch { return memoryDisabled; }
-  }
-  function updateButton() {
-    if (button) {
-      button.textContent = disabled() ? 'MRS独自アクセス解析を有効にする' : 'MRS独自アクセス解析を停止する';
-      button.setAttribute('aria-pressed', String(disabled()));
-    }
-  }
-  if (button) button.addEventListener('click', () => {
-    memoryDisabled = !disabled();
-    try {
-      localStorage.setItem(disabledKey, String(memoryDisabled));
-      if (memoryDisabled) localStorage.removeItem(key);
-    } catch { /* Storage restrictions do not affect the site. */ }
-    updateButton();
-  });
-  updateButton();
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   function visitor(day) {
     try {
@@ -43,7 +21,7 @@
     } catch { return null; }
   }
   async function send() {
-    if (disabled() || navigator.onLine === false) return;
+    if (navigator.onLine === false) return;
     try {
       const day = new Date(Date.now() + 9 * 3600000).toISOString().slice(0,10);
       const data = {site_id:site, event_id:crypto.randomUUID(), day_jst:day, visitor_id:visitor(day)};
