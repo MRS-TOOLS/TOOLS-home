@@ -42,7 +42,7 @@
 
         .tool-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: 1fr;
             gap: 12px;
         }
 
@@ -123,6 +123,12 @@
             border-radius: 8px;
             font-size: 14px;
             font-weight: normal;
+        }
+
+        @media (min-width: 640px) {
+            .tool-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 390px) {
