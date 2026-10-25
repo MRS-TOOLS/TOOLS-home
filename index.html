@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>MRS TOOLS</title>
 
     <style>
@@ -12,7 +12,7 @@
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
-            padding-bottom: 100px; /* 広告とプライバシーポリシー等の被りを防ぐため少し広めに変更 */
+            padding-bottom: calc(var(--ad-clearance, 78px) + env(safe-area-inset-bottom));
         }
 
         h1 {
@@ -70,17 +70,21 @@
         /* 画面最下部固定広告 */
         .ad-banner {
             position: fixed;
+            z-index: 90;
+            right: 0;
             bottom: 0;
             left: 0;
-            width: 100%;
             display: flex;
             justify-content: center;
-            align-items: center;
-            background-color: #121212;
-            z-index: 1000;
-            padding-top: 1px;
-            padding-bottom: calc(1px + env(safe-area-inset-bottom));
-            border-top: 1px solid #333;
+            width: 100%;
+            padding: 1px 0 calc(1px + env(safe-area-inset-bottom));
+            border-top: 1px solid #292929;
+            background: #0d0d0d;
+        }
+
+        .ad-banner-inner {
+            max-width: 100%;
+            line-height: 0;
         }
         
     </style>
@@ -219,8 +223,20 @@
     </div>
     
     <!-- 画面固定広告 -->
-    <div class="ad-banner">
-        <div style="max-width: 100%;">
+    <div class="ad-banner" aria-label="広告">
+        <div class="ad-banner-inner">
+    <script>
+        (() => {
+            const inner = document.querySelector('.ad-banner-inner');
+            // Measure only the ad; safe-area is added once by the body CSS.
+            const updateClearance = () => {
+                document.body.style.setProperty('--ad-clearance',
+                    Math.max(78, Math.ceil(inner.getBoundingClientRect().height) + 19) + 'px');
+            };
+            if ('ResizeObserver' in window) new ResizeObserver(updateClearance).observe(inner);
+            updateClearance();
+        })();
+    </script>
             <!-- admax -->
             <script src="https://adm.shinobi.jp/s/1596a166ea799d6e2c02f5a97ee144c2"></script>
             <!-- admax -->
